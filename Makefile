@@ -3,9 +3,24 @@
 
 .PHONY: build test test-integration clean install deps lint format
 
+# Build variables
+VERSION ?= $(shell git describe --tags --always --dirty)
+BUILD_TIME ?= $(shell date -u '+%Y-%m-%d_%H:%M:%S')
+GIT_COMMIT ?= $(shell git rev-parse --short HEAD)
+BUILD_USER ?= $(shell whoami)
+BUILD_HOST ?= $(shell hostname)
+
+# Build flags
+LDFLAGS = -ldflags "-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME) -X main.GitCommit=$(GIT_COMMIT) -X main.BuildUser=$(BUILD_USER) -X main.BuildHost=$(BUILD_HOST)"
+
 # Build the CLI tool
 build:
-	go build -o bin/ob-cli ./cmd/ob-cli
+	@echo "Building ob-cli..."
+	@echo "Version: $(VERSION)"
+	@echo "Build Time: $(BUILD_TIME)"
+	@echo "Git Commit: $(GIT_COMMIT)"
+	go build $(LDFLAGS) -o bin/ob-cli ./cmd/ob-cli
+	@echo "Build complete: bin/ob-cli"
 
 # Run tests
 test:

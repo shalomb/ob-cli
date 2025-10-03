@@ -6,13 +6,15 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/unop/ob-cli/internal/app"
+	"github.com/shalomb/ob-cli/internal/app"
 )
 
 var (
-	version = "dev"
-	commit  = "unknown"
-	date    = "unknown"
+	Version   = "dev"
+	BuildTime = "unknown"
+	GitCommit = "unknown"
+	BuildUser = "unknown"
+	BuildHost = "unknown"
 )
 
 func main() {
@@ -71,7 +73,11 @@ func init() {
 func runObCli(cmd *cobra.Command, args []string) error {
 	// Handle version flag
 	if versionFlag {
-		fmt.Printf("ob-cli version %s (commit: %s, built: %s)\n", version, commit, date)
+		fmt.Printf("ob-cli version %s\n", Version)
+		fmt.Printf("  Git Commit: %s\n", GitCommit)
+		fmt.Printf("  Build Time: %s\n", BuildTime)
+		fmt.Printf("  Build User: %s\n", BuildUser)
+		fmt.Printf("  Build Host: %s\n", BuildHost)
 		return nil
 	}
 
