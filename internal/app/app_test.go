@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/unop/ob-cli/internal/editor"
-	"github.com/unop/ob-cli/internal/frecency"
-	"github.com/unop/ob-cli/internal/fzf"
-	"github.com/unop/ob-cli/internal/git"
+	"github.com/shalomb/ob-cli/internal/editor"
+	"github.com/shalomb/ob-cli/internal/frecency"
+	"github.com/shalomb/ob-cli/internal/fzf"
+	"github.com/shalomb/ob-cli/internal/git"
 )
 
 func TestApp_New(t *testing.T) {
@@ -54,6 +54,25 @@ func TestApp_New(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Set up test environment
+			tempDir := t.TempDir()
+			
+			// Create test vault structure
+			if tt.config.Mode == "obsidian" || tt.config.Mode == "auto" {
+				// Create .obsidian directory for Obsidian vault
+				obsidianDir := filepath.Join(tempDir, ".obsidian")
+				os.MkdirAll(obsidianDir, 0755)
+				// Set environment variable
+				t.Setenv("OBSIDIAN_VAULT", tempDir)
+			}
+			if tt.config.Mode == "tips" || tt.config.Mode == "auto" {
+				// Create a markdown file for Tips vault
+				testFile := filepath.Join(tempDir, "test.md")
+				os.WriteFile(testFile, []byte("# Test"), 0644)
+				// Set environment variable
+				t.Setenv("TIPS_VAULT", tempDir)
+			}
+			
 			app, err := New(tt.config)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
@@ -376,5 +395,49 @@ func TestApp_RunInteractive_UserCancels(t *testing.T) {
 	mockEditor := editorService.(*editor.MockService)
 	if len(mockEditor.OpenedFiles) != 0 {
 		t.Errorf("Expected 0 opened files when user cancels, got %d", len(mockEditor.OpenedFiles))
+	}
+}
+
+func TestApp_RunInteractive_NewFileWithDirectories(t *testing.T) {
+	// Create temporary directory for testing
+	tempDir := t.TempDir()
+	
+	// Create mock services
+	frecencyService := frecency.NewMockService([]string{}, nil)
+	gitService := git.NewMockService(nil, "", 0, 0, nil)
+	editorService := editor.NewMockService([]string{}, 0, nil)
+	fzfService := fzf.NewMockService("", false, nil)
+
+	// Create app with mock services
+	app := &App{
+		config:     &Config{Mode: "tips", Debug: false},
+		gitService: gitService,
+		editor:     editorService,
+		fzf:        fzfService,
+		frecency:   frecencyService,
+		notesDir:   tempDir,
+		mode:       "tips",
+	}
+
+	// Test creating a new file with directory structure
+	newFilePath := "projects/new-project/notes.md"
+	err := app.RunInteractive(newFilePath)
+	if err != nil {
+		t.Errorf("RunInteractive() with new file creation error = %v", err)
+	}
+
+	// Check that the file was created
+	fullPath := filepath.Join(tempDir, newFilePath)
+	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+		t.Errorf("Expected file to be created at %s", fullPath)
+	}
+
+	// Check that the editor was called with the correct file
+	mockEditor := editorService.(*editor.MockService)
+	if len(mockEditor.OpenedFiles) != 1 {
+		t.Errorf("Expected 1 opened file, got %d", len(mockEditor.OpenedFiles))
+	}
+	if mockEditor.OpenedFiles[0] != newFilePath {
+		t.Errorf("Expected opened file to be %s, got %s", newFilePath, mockEditor.OpenedFiles[0])
 	}
 }

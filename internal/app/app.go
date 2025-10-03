@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/unop/ob-cli/internal/git"
-	"github.com/unop/ob-cli/internal/editor"
-	"github.com/unop/ob-cli/internal/fzf"
-	"github.com/unop/ob-cli/internal/frecency"
-	"github.com/unop/ob-cli/internal/vault"
+	"github.com/shalomb/ob-cli/internal/git"
+	"github.com/shalomb/ob-cli/internal/editor"
+	"github.com/shalomb/ob-cli/internal/fzf"
+	"github.com/shalomb/ob-cli/internal/frecency"
+	"github.com/shalomb/ob-cli/internal/vault"
 )
 
 // Config holds application configuration
@@ -60,7 +60,7 @@ func (a *App) RunInteractive(target string) error {
 	// If target is provided, check if it's a direct file path
 	if target != "" {
 		if a.isDirectFile(target) {
-			return a.editor.OpenFile(target)
+			return a.handleFileSelection(target)
 		}
 		// Otherwise, use as search term
 	}
@@ -123,9 +123,8 @@ func (a *App) SyncWithRemote() error {
 // Private methods
 
 func (a *App) isDirectFile(target string) bool {
-	fullPath := filepath.Join(a.notesDir, target)
-	_, err := os.Stat(fullPath)
-	return err == nil
+	// Check if it looks like a file path (contains .md extension or has directory separators)
+	return strings.HasSuffix(target, ".md") || strings.Contains(target, "/")
 }
 
 func (a *App) checkGitStatus() error {

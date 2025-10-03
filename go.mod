@@ -1,4 +1,4 @@
-module github.com/unop/ob-cli
+module github.com/shalomb/ob-cli
 
 go 1.21
 

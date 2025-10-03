@@ -57,11 +57,10 @@ func (s *RealService) SelectFile(files []string, query string) (string, error) {
 	
 	// Set up stdin to provide file list
 	cmd.Stdin = strings.NewReader(strings.Join(files, "\n"))
-	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	
-	// Run fzf
-	err := cmd.Run()
+	// Capture stdout to get the selection
+	output, err := cmd.Output()
 	if err != nil {
 		// fzf returns exit code 1 when user cancels (ESC)
 		if exitError, ok := err.(*exec.ExitError); ok && exitError.ExitCode() == 1 {
@@ -70,9 +69,9 @@ func (s *RealService) SelectFile(files []string, query string) (string, error) {
 		return "", fmt.Errorf("fzf execution failed: %w", err)
 	}
 	
-	// Note: In a real implementation, we'd capture stdout to get the selection
-	// For now, this is a placeholder that will be enhanced
-	return "", nil
+	// Return the selected file (trim whitespace)
+	selection := strings.TrimSpace(string(output))
+	return selection, nil
 }
 
 // SelectFile returns mock selection for testing
