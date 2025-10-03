@@ -47,8 +47,8 @@ func (s *RealService) SelectFile(files []string, query string) (string, error) {
 		return "", fmt.Errorf("fzf is not installed. Please install fzf: https://github.com/junegunn/fzf")
 	}
 	
-	// Prepare fzf command
-	cmd := exec.Command("fzf", "--height", "40%", "--border")
+	// Prepare fzf command with print-query to capture user input
+	cmd := exec.Command("fzf", "--height", "40%", "--border", "--print-query")
 	
 	// Add query if provided
 	if query != "" {
@@ -69,9 +69,24 @@ func (s *RealService) SelectFile(files []string, query string) (string, error) {
 		return "", fmt.Errorf("fzf execution failed: %w", err)
 	}
 	
-	// Return the selected file (trim whitespace)
-	selection := strings.TrimSpace(string(output))
-	return selection, nil
+	// Parse output: first line is query, second line is selection (if any)
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	if len(lines) == 0 {
+		return "", nil
+	}
+	
+	// If user typed something but didn't select from list, return what they typed
+	if len(lines) == 1 {
+		return strings.TrimSpace(lines[0]), nil
+	}
+	
+	// If user selected something from the list, return the selection
+	if len(lines) >= 2 && strings.TrimSpace(lines[1]) != "" {
+		return strings.TrimSpace(lines[1]), nil
+	}
+	
+	// Fallback to query if no selection
+	return strings.TrimSpace(lines[0]), nil
 }
 
 // SelectFile returns mock selection for testing
